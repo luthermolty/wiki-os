@@ -4,6 +4,9 @@ WikiOS turns an Obsidian vault into a local web app. It lets you browse notes th
 
 Built by [Ansub](http://twitter.com/ansubkhan), co-founder of [Supafast](https://withsupafast.com/?utm_source=github&utm_medium=readme&utm_campaign=wikios) - we build websites for B2B SaaS & AI companies.
 
+
+<img width="3024" height="1324" alt="CleanShot 2026-04-12 at 21 10 31@2x" src="https://github.com/user-attachments/assets/86ca9f3e-db4b-4a21-96bc-fe18ba346ece" />
+
 ## What it does
 
 - Connects to an Obsidian-compatible markdown folder

@@ -21,7 +21,7 @@ WikiOS will open in your browser and guide you through choosing a vault. You can
 
 ## Features
 
-- Homepage with featured notes, recent notes, and topic browsing
+- Homepage with featured notes, recent notes, and people highlights
 - Fast local search
 - Clean article pages
 - Graph view

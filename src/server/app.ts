@@ -82,11 +82,18 @@ async function readVersionInfo(): Promise<VersionInfo> {
 
 function buildSetupRequiredResponse(setup: Pick<WikiSetupStatus, "wikiRoot" | "configError">) {
   const hasConfigError = setup.configError !== null;
+  const code =
+    setup.configError?.code === "INVALID_WIKI_ROOT"
+      ? "INVALID_WIKI_ROOT"
+      : hasConfigError
+        ? "CONFIG_ERROR"
+        : "SETUP_REQUIRED";
+  const error = setup.configError?.message ?? "Vault setup required";
 
   return {
     ok: false,
-    error: hasConfigError ? "Local config needs attention" : "Vault setup required",
-    code: hasConfigError ? "CONFIG_ERROR" : "SETUP_REQUIRED",
+    error,
+    code,
     configured: false,
     totalPages: 0,
     wikiRoot: setup.wikiRoot,
@@ -218,6 +225,9 @@ export async function buildServer({
       try {
         const setupStatus = await getWikiSetupStatus();
         const shouldResetCorruptConfig = request.body?.resetCorruptConfig === true;
+        const setupConfigError = setupStatus.configError;
+        const requiresCorruptReset =
+          setupConfigError !== null && setupConfigError.code !== "INVALID_WIKI_ROOT";
 
         if (setupStatus.hasEnvOverride) {
           return reply.code(409).send({
@@ -225,11 +235,11 @@ export async function buildServer({
           });
         }
 
-        if (setupStatus.configError && !shouldResetCorruptConfig) {
+        if (requiresCorruptReset && !shouldResetCorruptConfig) {
           return reply.code(409).send({
-            error: setupStatus.configError.message,
+            error: setupConfigError.message,
             code: "CONFIG_ERROR",
-            configError: setupStatus.configError,
+            configError: setupConfigError,
           });
         }
 
@@ -245,7 +255,7 @@ export async function buildServer({
         let existingConfig = {};
         let rollbackConfig = {};
 
-        if (!setupStatus.configError) {
+        if (!requiresCorruptReset) {
           existingConfig = await loadWikiRuntimeConfig();
           rollbackConfig = existingConfig;
         }

@@ -5,7 +5,6 @@ import { useWikiConfig } from "@/client/wiki-config";
 import { type HomepageData, type PageSummary } from "@/lib/wiki-shared";
 import { type HomepageSectionKey } from "@/lib/wiki-config";
 import { usePersonImage } from "@/client/use-person-image";
-import { type TopicBrowseState } from "@/components/search-box";
 
 const categoryAccents = [
   "chip-teal",
@@ -76,23 +75,13 @@ function PageChip({ page, index }: { page: PageSummary; index: number }) {
 
 export function HomepageContent({
   homepage,
-  onBrowseTopic,
 }: {
   homepage: HomepageData;
-  onBrowseTopic: (topic: TopicBrowseState | null) => void;
 }) {
   const config = useWikiConfig();
   const labels = config.homepage.labels;
   const orderedSections = config.homepage.sectionOrder.filter((section): section is HomepageSectionKey => {
-    if (section === "people") {
-      return homepage.people.length > 0;
-    }
-
-    if (section === "categories") {
-      return homepage.categories.length > 0;
-    }
-
-    return true;
+    return section !== "people" || homepage.people.length > 0;
   });
   const midpoint = Math.ceil(orderedSections.length / 2);
   const columns = [orderedSections.slice(0, midpoint), orderedSections.slice(midpoint)];
@@ -169,42 +158,6 @@ export function HomepageContent({
           {homepage.people.map((person, index) => (
             <PersonCard key={person.file} person={person} index={index} />
           ))}
-        </div>
-      </div>
-    ) : null,
-    categories: homepage.categories.length > 0 ? (
-      <div>
-        <div className="mb-4 flex items-center gap-2">
-          <span className="h-2 w-2 rounded-full bg-[var(--teal)] shadow-[0_0_12px_var(--teal)]" />
-          <p className="text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-[var(--muted-foreground)]">
-            {labels.categories}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {homepage.categories.map((category, index) => {
-            const accent = categoryAccents[index % categoryAccents.length];
-            return (
-              <button
-                key={category.name}
-                type="button"
-                onClick={() =>
-                  onBrowseTopic({
-                    name: category.name,
-                    emoji: category.emoji,
-                    pages: category.pages,
-                  })
-                }
-                className={`${accent} group inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-0.5 hover:shadow-[0_8px_20px_-10px_rgba(21,19,26,0.2)] active:scale-[0.97]`}
-              >
-                <span className="font-semibold">
-                  {category.emoji} {category.name}
-                </span>
-                <span className="rounded-full bg-white/60 px-1.5 py-0.5 text-[0.65rem] font-semibold tabular-nums">
-                  {category.count}
-                </span>
-              </button>
-            );
-          })}
         </div>
       </div>
     ) : null,

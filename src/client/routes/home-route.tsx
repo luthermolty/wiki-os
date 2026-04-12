@@ -24,7 +24,7 @@ export function Component() {
 
   return (
     <SearchBox totalPages={homepage.totalPages}>
-      {(onBrowseTopic) => <HomepageContent homepage={homepage} onBrowseTopic={onBrowseTopic} />}
+      <HomepageContent homepage={homepage} />
     </SearchBox>
   );
 }

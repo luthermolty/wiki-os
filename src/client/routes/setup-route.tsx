@@ -14,7 +14,7 @@ interface SetupStatus {
   sampleVaultPath: string | null;
   folderPickerAvailable: boolean;
   configError: {
-    code: "INVALID_JSON" | "INVALID_CONFIG";
+    code: "INVALID_JSON" | "INVALID_CONFIG" | "INVALID_WIKI_ROOT";
     message: string;
     path: string;
   } | null;
@@ -48,10 +48,20 @@ export function Component() {
   const [isPickingFolder, setIsPickingFolder] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const isChangeMode = setupStatus.mode === "change";
+  const requiresCorruptReset =
+    setupStatus.configError !== null && setupStatus.configError.code !== "INVALID_WIKI_ROOT";
+  const issueTitle =
+    setupStatus.configError?.code === "INVALID_WIKI_ROOT"
+      ? setupStatus.hasEnvOverride
+        ? "This vault path is broken for this session."
+        : "Your saved vault can’t be found."
+      : "Local config needs attention.";
   const primaryActionLabel = setupStatus.configError
     ? isSaving
-      ? "Repairing..."
-      : "Repair config and continue"
+      ? "Fixing..."
+      : setupStatus.configError.code === "INVALID_WIKI_ROOT"
+        ? "Reconnect vault"
+        : "Repair config and continue"
     : isChangeMode
       ? isSaving
         ? "Switching..."
@@ -158,10 +168,10 @@ export function Component() {
 
       <main className="relative flex flex-1 items-center justify-center px-4 py-20 sm:px-6">
       <div className="w-full max-w-md space-y-6">
-        {setupStatus.configured && (
+        {(setupStatus.configured || setupStatus.wikiRoot) && (
           <div>
             <p className="text-xs font-medium uppercase tracking-widest text-[var(--muted-foreground)]">
-              Current vault
+              {setupStatus.configured ? "Current vault" : "Last vault path"}
             </p>
             <p className="mt-1 break-all text-sm leading-relaxed text-[var(--foreground)]">
               {setupStatus.wikiRoot}
@@ -171,14 +181,14 @@ export function Component() {
 
         {setupStatus.hasEnvOverride && (
           <div className="rounded-2xl bg-[var(--teal-soft)] px-4 py-3 text-sm text-[var(--foreground)]">
-            Session locked by environment override. Restart without <code>WIKI_ROOT</code> or{" "}
-            <code>WIKIOS_FORCE_WIKI_ROOT</code> to change.
+            Session locked by <code>WIKIOS_FORCE_WIKI_ROOT</code>. Restart without it to choose a
+            different vault here.
           </div>
         )}
 
         {setupStatus.configError && (
           <div className="rounded-2xl bg-[var(--peach-soft)] px-4 py-3 text-sm text-[var(--foreground)]">
-            <p className="font-medium">Local config needs attention.</p>
+            <p className="font-medium">{issueTitle}</p>
             <p className="mt-1 leading-relaxed">{setupStatus.configError.message}</p>
             <p className="mt-2 break-all text-xs text-[var(--muted-foreground)]">
               {setupStatus.configError.path}
@@ -220,7 +230,7 @@ export function Component() {
             onClick={() =>
               void submitSetup({
                 wikiRoot,
-                resetCorruptConfig: setupStatus.configError !== null,
+                resetCorruptConfig: requiresCorruptReset,
               })
             }
             disabled={isSaving || isPickingFolder || setupStatus.hasEnvOverride}
@@ -242,7 +252,7 @@ export function Component() {
             onClick={() =>
               void submitSetup({
                 useSampleVault: true,
-                resetCorruptConfig: setupStatus.configError !== null,
+                resetCorruptConfig: requiresCorruptReset,
               })
             }
             disabled={isSaving || isPickingFolder || setupStatus.hasEnvOverride}

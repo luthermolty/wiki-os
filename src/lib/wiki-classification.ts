@@ -123,6 +123,17 @@ export const PERSON_SECTION_HEADINGS = new Set([
   "life",
 ]);
 
+const STRUCTURAL_FOLDER_TOPICS = new Set([
+  "topic",
+  "topics",
+  "note",
+  "notes",
+  "docs",
+  "documents",
+  "source",
+  "sources",
+]);
+
 export function extractSummary(markdown: string): string {
   for (const line of markdown.split("\n")) {
     const trimmed = line.trim();
@@ -180,7 +191,14 @@ export function collectFrontmatterTopics(
 }
 
 export function collectFolderTopics(file: string, config: WikiOsConfig) {
-  const parts = normalizeRelativePath(file).split("/").slice(0, -1);
+  const parts = normalizeRelativePath(file)
+    .split("/")
+    .slice(0, -1)
+    .filter((part) => {
+      const normalized = normalizeTopicKey(part);
+      return normalized.length > 0 && !STRUCTURAL_FOLDER_TOPICS.has(normalized);
+    });
+
   return parts.slice(0, config.categories.folderDepth);
 }
 

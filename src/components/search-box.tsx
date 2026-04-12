@@ -59,7 +59,6 @@ export interface TopicBrowseState {
   emoji: string;
   pages: PageSummary[];
 }
-
 function splitBrandTitle(title: string) {
   // Split on camelCase / PascalCase boundary (e.g. "WikiOS" → "Wiki" + "OS")
   const camelMatch = title.match(/^(.+?)([A-Z][A-Z]+)$/);
@@ -88,7 +87,7 @@ export function SearchBox({
   children,
 }: {
   totalPages: number;
-  children: (onBrowseTopic: (topic: TopicBrowseState | null) => void) => ReactNode;
+  children: ReactNode;
 }) {
   const config = useWikiConfig();
   const { revalidate, state: revalidationState } = useRevalidator();
@@ -96,7 +95,6 @@ export function SearchBox({
   const [results, setResults] = useState<SearchResult[] | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
-  const [browseTopic, setBrowseTopic] = useState<TopicBrowseState | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -161,7 +159,6 @@ export function SearchBox({
     setQuery(value);
     setIsSearching(trimmedValue.length > 0);
     setSearchError(null);
-    setBrowseTopic(null);
 
     if (!trimmedValue) {
       setResults(null);
@@ -173,24 +170,12 @@ export function SearchBox({
     setResults(null);
     setIsSearching(false);
     setSearchError(null);
-    setBrowseTopic(null);
     abortRef.current?.abort();
     inputRef.current?.focus();
   };
 
-  const handleBrowseTopic = (topic: TopicBrowseState | null) => {
-    setBrowseTopic(topic);
-    if (topic) {
-      setQuery("");
-      setResults(null);
-      setIsSearching(false);
-      setSearchError(null);
-      abortRef.current?.abort();
-    }
-  };
-
   const hasQuery = query.trim().length > 0;
-  const showResults = hasQuery || browseTopic !== null;
+  const showResults = hasQuery;
   const isRevalidating = revalidationState === "loading";
   const refreshBusy = isRefreshing || isRevalidating;
   const brandTitle = splitBrandTitle(config.siteTitle);
@@ -288,59 +273,6 @@ export function SearchBox({
               inputRef={inputRef}
             />
 
-            {browseTopic && !hasQuery && (
-              <div className="animate-in surface-raised mt-3 overflow-hidden rounded-3xl">
-                <div className="flex items-center justify-between border-b border-[var(--border)] px-5 py-3.5">
-                  <p className="flex items-center gap-2 text-sm font-semibold text-[var(--foreground)]">
-                    <span>{browseTopic.emoji}</span>
-                    <span className="font-display text-[1.05rem]">{browseTopic.name}</span>
-                    <span className="chip-teal rounded-full px-2 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wider">
-                      {browseTopic.pages.length} {config.homepage.labels.browseTopicArticles}
-                    </span>
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => setBrowseTopic(null)}
-                    className="text-xs font-medium text-[var(--muted-foreground)] transition-colors duration-150 hover:text-[var(--foreground)]"
-                  >
-                    Close
-                  </button>
-                </div>
-                <div className="divide-y divide-[var(--border)]">
-                  {browseTopic.pages.map((page, index) => {
-                    const staggerClass = `stagger-${Math.min(index + 1, 8)}`;
-                    const accent = ["var(--teal)", "var(--peach)", "var(--lavender)"][index % 3];
-                    return (
-                      <Link
-                        key={page.file}
-                        to={`/wiki/${page.slug}`}
-                        className={`animate-in group relative block px-5 py-4 transition-[background-color] duration-150 hover:bg-white/50 ${staggerClass}`}
-                      >
-                        <span
-                          aria-hidden
-                          className="absolute left-0 top-1/2 h-0 w-1 -translate-y-1/2 rounded-r-full transition-all duration-200 group-hover:h-[70%]"
-                          style={{ background: accent }}
-                        />
-                        <p className="font-display text-[1.05rem] text-[var(--foreground)]">
-                          {page.title}
-                        </p>
-                        {page.summary && (
-                          <p className="mt-1 line-clamp-2 text-[0.85rem] leading-relaxed text-[var(--muted-foreground)]">
-                            {page.summary}
-                          </p>
-                        )}
-                        <div className="mt-1.5 flex items-center gap-2 text-[0.7rem] font-medium text-[var(--muted-foreground)]">
-                          <span>{page.wordCount} words</span>
-                          <span>·</span>
-                          <span>{page.backlinkCount} backlinks</span>
-                        </div>
-                      </Link>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
             {hasQuery && (
               <div className="animate-in surface-raised mt-3 overflow-hidden rounded-3xl">
                 {isSearching ? (
@@ -403,7 +335,7 @@ export function SearchBox({
             )}
           </div>
 
-          {!showResults && children(handleBrowseTopic)}
+          {!showResults && children}
         </div>
       </main>
 

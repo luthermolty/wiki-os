@@ -233,4 +233,43 @@ describe("wiki runtime settings", () => {
       await rm(tempDir, { recursive: true, force: true });
     }
   });
+
+  it("falls back into setup mode when the saved vault path no longer exists", async () => {
+    const tempDir = await mkdtemp(path.join(os.tmpdir(), "wiki-os-runtime-"));
+    const missingWikiRoot = path.join(tempDir, "missing-vault");
+
+    try {
+      process.env.HOME = tempDir;
+
+      vi.resetModules();
+      const runtime = await import("../src/server/wiki-runtime");
+      await runtime.saveWikiRuntimeConfig({ wikiRoot: missingWikiRoot });
+
+      vi.resetModules();
+      const reloadedRuntime = await import("../src/server/wiki-runtime");
+      const settings = await reloadedRuntime.resolveWikiRuntimeSettings();
+      const status = await reloadedRuntime.getWikiSetupStatus();
+
+      expect(settings.wikiRoot).toBeNull();
+      expect(settings.selectedWikiRoot).toBe(missingWikiRoot);
+      expect(settings.wikiRootSource).toBe("saved");
+      expect(settings.configError).toMatchObject({
+        code: "INVALID_WIKI_ROOT",
+        path: missingWikiRoot,
+      });
+
+      expect(status).toMatchObject({
+        configured: false,
+        wikiRoot: missingWikiRoot,
+        wikiRootSource: "saved",
+        hasEnvOverride: false,
+        configError: {
+          code: "INVALID_WIKI_ROOT",
+          path: missingWikiRoot,
+        },
+      });
+    } finally {
+      await rm(tempDir, { recursive: true, force: true });
+    }
+  });
 });

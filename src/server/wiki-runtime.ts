@@ -14,7 +14,7 @@ const DEFAULT_SETUP_CONFIG_PATH =
 type WikiRootSource = "env" | "saved" | "none";
 
 export interface WikiRuntimeConfigError {
-  code: "INVALID_JSON" | "INVALID_CONFIG";
+  code: "INVALID_JSON" | "INVALID_CONFIG" | "INVALID_WIKI_ROOT";
   message: string;
   path: string;
 }
@@ -26,7 +26,9 @@ export interface StoredWikiRuntimeConfig {
 
 export interface WikiRuntimeSettings {
   wikiRoot: string | null;
+  selectedWikiRoot: string | null;
   wikiRootSource: WikiRootSource;
+  hasForcedEnvOverride: boolean;
   indexDbPath: string | null;
   setupConfigPath: string;
   sampleVaultPath: string | null;
@@ -206,7 +208,7 @@ export async function resolveWikiRuntimeSettings(): Promise<WikiRuntimeSettings>
       ? normalizeInputPath(storedConfigState.config.wikiRoot ?? null)
       : null;
 
-  const wikiRoot = forcedEnvWikiRoot ?? storedWikiRoot ?? envWikiRoot ?? null;
+  const selectedWikiRoot = forcedEnvWikiRoot ?? storedWikiRoot ?? envWikiRoot ?? null;
   const wikiRootSource: WikiRootSource = forcedEnvWikiRoot
     ? "env"
     : storedWikiRoot
@@ -214,21 +216,40 @@ export async function resolveWikiRuntimeSettings(): Promise<WikiRuntimeSettings>
       : envWikiRoot
       ? "env"
       : "none";
+  let configError = storedConfigState.configError;
+  let wikiRoot = selectedWikiRoot;
+
+  if (!configError && selectedWikiRoot && !(await pathIsDirectory(selectedWikiRoot))) {
+    configError = {
+      code: "INVALID_WIKI_ROOT",
+      message:
+        wikiRootSource === "saved"
+          ? "Your saved vault folder can’t be found anymore. Choose a different vault below."
+          : forcedEnvWikiRoot
+            ? "WikiOS was started with a vault path that can’t be found. Restart without WIKIOS_FORCE_WIKI_ROOT or fix that path."
+            : "WikiOS was started with a vault path that can’t be found. Choose a different vault below.",
+      path: selectedWikiRoot,
+    };
+    wikiRoot = null;
+  }
+
   const personOverrides =
-    wikiRoot === null || storedConfigState.configError !== null
+    wikiRoot === null || configError !== null
       ? {}
       : normalizePersonOverrides(storedConfigState.config.personOverridesByVault?.[wikiRoot]);
 
   return {
     wikiRoot,
+    selectedWikiRoot,
     wikiRootSource,
+    hasForcedEnvOverride: forcedEnvWikiRoot !== null,
     indexDbPath: wikiRoot
       ? normalizeInputPath(process.env.WIKIOS_INDEX_DB) ?? buildDefaultIndexDbPath(wikiRoot)
       : null,
     setupConfigPath,
     sampleVaultPath,
     personOverrides,
-    configError: storedConfigState.configError,
+    configError,
   };
 }
 
@@ -321,9 +342,9 @@ export async function getWikiSetupStatus(): Promise<WikiSetupStatus> {
 
   return {
     configured: runtime.wikiRoot !== null,
-    wikiRoot: runtime.wikiRoot,
+    wikiRoot: runtime.selectedWikiRoot,
     wikiRootSource: runtime.wikiRootSource,
-    hasEnvOverride: runtime.wikiRootSource === "env",
+    hasEnvOverride: runtime.hasForcedEnvOverride,
     sampleVaultPath: runtime.sampleVaultPath,
     folderPickerAvailable: process.platform === "darwin",
     configError: runtime.configError,

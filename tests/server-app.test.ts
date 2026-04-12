@@ -315,6 +315,78 @@ describe("server app", () => {
     }
   });
 
+  it("stays recoverable when the saved vault path no longer exists", async () => {
+    const tempDir = await mkdtemp(path.join(os.tmpdir(), "wiki-ui-missing-vault-"));
+    const missingRoot = path.join(tempDir, "missing-vault");
+    const replacementRoot = path.join(tempDir, "replacement-vault");
+    const setupConfigPath = path.join(tempDir, "config.json");
+
+    try {
+      await mkdir(replacementRoot, { recursive: true });
+      await writeFile(path.join(replacementRoot, "Alpha.md"), "# Alpha\n\nRecovered vault page.\n");
+      await writeFile(setupConfigPath, `${JSON.stringify({ wikiRoot: missingRoot }, null, 2)}\n`, "utf8");
+
+      const server = await loadServerModule({ setupConfigPath });
+      const app = await server.buildServer({ logger: false, serveClient: false });
+      await app.ready();
+
+      const setupStatus = await app.inject({ method: "GET", url: "/api/setup/status" });
+      const health = await app.inject({ method: "GET", url: "/api/health" });
+      const home = await app.inject({ method: "GET", url: "/api/home" });
+      const repairedSetup = await app.inject({
+        method: "POST",
+        url: "/api/setup/config",
+        payload: { wikiRoot: replacementRoot },
+      });
+      const homeAfter = await app.inject({ method: "GET", url: "/api/home" });
+
+      expect(setupStatus.statusCode).toBe(200);
+      expect(setupStatus.json()).toMatchObject({
+        configured: false,
+        wikiRoot: missingRoot,
+        wikiRootSource: "saved",
+        hasEnvOverride: false,
+        configError: {
+          code: "INVALID_WIKI_ROOT",
+          path: missingRoot,
+        },
+      });
+
+      expect(health.statusCode).toBe(409);
+      expect(health.json()).toMatchObject({
+        ok: false,
+        code: "INVALID_WIKI_ROOT",
+        wikiRoot: missingRoot,
+        configError: {
+          code: "INVALID_WIKI_ROOT",
+          path: missingRoot,
+        },
+      });
+
+      expect(home.statusCode).toBe(409);
+      expect(home.json()).toMatchObject({
+        code: "SETUP_REQUIRED",
+        error: "Vault setup required",
+      });
+
+      expect(repairedSetup.statusCode).toBe(200);
+      expect(repairedSetup.json()).toMatchObject({
+        ok: true,
+        wikiRoot: replacementRoot,
+        source: "saved",
+      });
+
+      expect(homeAfter.statusCode).toBe(200);
+      expect(homeAfter.json()).toMatchObject({
+        totalPages: 1,
+      });
+
+      await app.close();
+    } finally {
+      await rm(tempDir, { recursive: true, force: true });
+    }
+  });
+
   it("switches to a different saved vault when setup is reopened later", async () => {
     const tempDir = await mkdtemp(path.join(os.tmpdir(), "wiki-ui-switch-"));
     const firstRoot = path.join(tempDir, "demo-vault");

@@ -155,6 +155,7 @@ describe("wiki snapshot", () => {
     try {
       await mkdir(path.join(root, "guides"), { recursive: true });
       await mkdir(path.join(root, "people"), { recursive: true });
+      await mkdir(path.join(root, "topics"), { recursive: true });
 
       await writeFile(
         path.join(root, "guides", "Knowledge Graphs.md"),
@@ -212,6 +213,22 @@ describe("wiki snapshot", () => {
       );
 
       await writeFile(
+        path.join(root, "topics", "WikiOS.md"),
+        [
+          "---",
+          "tags:",
+          "  - product",
+          "  - system",
+          "---",
+          "",
+          "# WikiOS",
+          "",
+          "WikiOS is a local-first wiki experience built around markdown files.",
+          "",
+        ].join("\n"),
+      );
+
+      await writeFile(
         path.join(root, "Reading People.md"),
         [
           "# Reading People",
@@ -236,8 +253,9 @@ describe("wiki snapshot", () => {
         expect.arrayContaining(["Research", "Systems", "Guides"]),
       );
       expect(homepage.categories.map((category) => category.name)).toEqual(
-        expect.arrayContaining(["Research", "Systems", "Guides", "Search"]),
+        expect.arrayContaining(["Research", "Guides", "Search"]),
       );
+      expect(homepage.categories.map((category) => category.name)).not.toContain("Topics");
       expect(ada.isPerson).toBe(true);
       expect(elon.isPerson).toBe(false);
       expect(readingPeople.isPerson).toBe(false);

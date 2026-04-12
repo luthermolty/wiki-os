@@ -2,7 +2,6 @@ export const HOMEPAGE_SECTION_KEYS = [
   "featured",
   "topConnected",
   "people",
-  "categories",
   "recentPages",
 ] as const;
 
@@ -34,9 +33,7 @@ export interface WikiOsConfigInput {
       featured?: string;
       topConnected?: string;
       people?: string;
-      categories?: string;
       recentPages?: string;
-      browseTopicArticles?: string;
       spotlightBadge?: string;
       statsEyebrow?: string;
       statsDescription?: string;
@@ -79,9 +76,7 @@ export interface WikiOsConfig {
       featured: string;
       topConnected: string;
       people: string;
-      categories: string;
       recentPages: string;
-      browseTopicArticles: string;
       spotlightBadge: string;
       statsEyebrow: string;
       statsDescription: string;
@@ -109,7 +104,7 @@ export interface WikiOsConfig {
 export const DEFAULT_WIKI_OS_CONFIG: WikiOsConfig = {
   siteTitle: "WikiOS",
   tagline: "Plug-and-play Obsidian wiki for search, browsing, and local knowledge graphs.",
-  searchPlaceholder: "Search notes, ideas, topics, and people...",
+  searchPlaceholder: "Search notes, ideas, and people...",
   navigation: {
     graphLabel: "Graph",
     statsLabel: "Stats",
@@ -124,9 +119,7 @@ export const DEFAULT_WIKI_OS_CONFIG: WikiOsConfig = {
       featured: "Discover",
       topConnected: "Most Connected",
       people: "People",
-      categories: "Browse by Topic",
       recentPages: "Recently Added",
-      browseTopicArticles: "articles",
       spotlightBadge: "Spotlight",
       statsEyebrow: "Wiki Snapshot",
       statsDescription: "A live view of the Obsidian wiki index and backlink graph.",
@@ -269,15 +262,9 @@ export function resolveWikiOsConfig(input?: WikiOsConfigInput): WikiOsConfig {
         people:
           input?.homepage?.labels?.people?.trim() ||
           DEFAULT_WIKI_OS_CONFIG.homepage.labels.people,
-        categories:
-          input?.homepage?.labels?.categories?.trim() ||
-          DEFAULT_WIKI_OS_CONFIG.homepage.labels.categories,
         recentPages:
           input?.homepage?.labels?.recentPages?.trim() ||
           DEFAULT_WIKI_OS_CONFIG.homepage.labels.recentPages,
-        browseTopicArticles:
-          input?.homepage?.labels?.browseTopicArticles?.trim() ||
-          DEFAULT_WIKI_OS_CONFIG.homepage.labels.browseTopicArticles,
         spotlightBadge:
           input?.homepage?.labels?.spotlightBadge?.trim() ||
           DEFAULT_WIKI_OS_CONFIG.homepage.labels.spotlightBadge,

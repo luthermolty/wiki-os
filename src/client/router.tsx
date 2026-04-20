@@ -18,6 +18,10 @@ export const router = createBrowserRouter([
     lazy: () => import("./routes/graph-route"),
   },
   {
+    path: "/globe3d",
+    lazy: () => import("./routes/globe3d-route"),
+  },
+  {
     path: "/wiki/*",
     lazy: () => import("./routes/wiki-route"),
   },

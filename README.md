@@ -30,6 +30,7 @@ WikiOS will open in your browser and guide you through choosing a vault. You can
 - Fast local search
 - Clean article pages
 - Graph view
+- **3D Globe view** - Interactive 3D visualization of your wiki knowledge graph
 - Stats view
 - Manual reindex support
 - Automatic file watching
@@ -74,6 +75,39 @@ For a direct build and run:
 docker build -t wiki-os .
 docker run --rm -p 5211:5211 -e WIKI_ROOT=/vault -v /path/to/your/vault:/vault:ro -v wiki-os-data:/data wiki-os
 ```
+
+## 3D Globe Visualization
+
+WikiOS now includes an interactive 3D globe view that visualizes your wiki knowledge graph in a stunning spherical layout. Access it via the "3D Globe" link in the navigation or by visiting `/globe3d`.
+
+### Features
+
+- **Spherical Layout**: Wiki articles arranged on a 3D sphere for spatial understanding
+- **Interactive Navigation**: Drag to rotate, scroll to zoom, click nodes to focus
+- **Real-time Search**: Find concepts instantly with camera animation to selected nodes
+- **Smart Labels**: Node titles appear when zoomed in for clarity
+- **Color-coded Nodes**: Different categories have distinct colors for easy identification
+- **Light Gray Connections**: Clean, subtle edge lines showing wiki link relationships
+- **Responsive Design**: Works seamlessly on desktop and mobile devices
+
+### Using the 3D Globe
+
+1. **Navigate** to the 3D Globe view from the main menu
+2. **Search** for concepts using the search box - the camera will smoothly animate to focus on your selection
+3. **Explore** by dragging to rotate the globe and scrolling to zoom in/out
+4. **Click** on any node to see detailed information about that article
+5. **Hover** over nodes for quick tooltips with word count and connection stats
+
+### Technical Details
+
+The 3D Globe uses:
+- **Three.js** for 3D rendering
+- **OrbitControls** for smooth camera manipulation
+- **Raycasting** for precise node selection
+- **Canvas textures** for high-quality text labels
+- **RequestAnimationFrame** for smooth 60fps rendering
+
+The visualization automatically calculates node positions using spherical coordinates, ensuring an even distribution of your wiki articles across the globe surface.
 
 ## Contributor mode
 
